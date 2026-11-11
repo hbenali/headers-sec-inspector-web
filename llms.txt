@@ -1,0 +1,8 @@
+# Security Headers Grader
+
+> Free, single-page tool that grades pasted HTTP response headers from A+ to F and generates a recommended security header set.
+
+Static site (no backend, no build step, no dependencies) at https://headers-sec.hbenali.ovh. Browsers cannot read another site's response headers (CORS), so the tool works on headers you paste (from `curl -sI https://example.com` or browser dev tools). It makes no network calls (CSP `connect-src 'none'`). Checks Content-Security-Policy, Strict-Transport-Security, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, COOP/COEP/CORP, X-Frame-Options vs frame-ancestors, Cache-Control, Set-Cookie flags and information leaks. The grade is a heuristic. Generates nginx, Apache, Caddy and `_headers` snippets.
+
+## Pages
+- [Security Headers Grader](https://headers-sec.hbenali.ovh/): the tool itself. `?domain=example.com` fills in the curl command.

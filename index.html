@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Security Headers Grader — HTTP Response Header Checker</title>
+  <meta name="description" content="Paste a site's HTTP response headers and get an A+ to F grade with a fix hint for each: CSP, HSTS, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, COOP/COEP/CORP, cookies and information leaks. Runs entirely in your browser. Includes an nginx, Apache, Caddy and _headers generator.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://headers-sec.hbenali.ovh/">
+
+  <!-- Security (static hosting: no custom HTTP headers, so CSP/referrer are set here; X-Frame-Options/X-Content-Type-Options need a real header and aren't achievable via meta). This page makes no network calls: connect-src 'none'. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Security Headers Grader — HTTP Response Header Checker">
+  <meta property="og:description" content="Paste response headers, get an A+ to F grade, per-header findings and fix hints. Nothing leaves your browser.">
+  <meta property="og:url" content="https://headers-sec.hbenali.ovh/">
+  <meta property="og:site_name" content="Security Headers Grader">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:image" content="https://headers-sec.hbenali.ovh/favicon.svg">
+  <meta property="og:image:type" content="image/svg+xml">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Security Headers Grader — HTTP Response Header Checker">
+  <meta name="twitter:description" content="Paste response headers, get an A+ to F grade, per-header findings and fix hints. Nothing leaves your browser.">
+  <meta name="twitter:image" content="https://headers-sec.hbenali.ovh/favicon.svg">
+
+  <!-- SVG Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="alternate icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#0c1218" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f4efe4" media="(prefers-color-scheme: light)">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Headers Grader">
+
+  <!-- Structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "url": "https://headers-sec.hbenali.ovh/",
+        "name": "Security Headers Grader",
+        "description": "Free HTTP security headers grader: paste response headers and get a heuristic grade with fix hints."
+      },
+      {
+        "@type": "WebApplication",
+        "name": "Security Headers Grader",
+        "url": "https://headers-sec.hbenali.ovh/",
+        "applicationCategory": "SecurityApplication",
+        "operatingSystem": "Any",
+        "description": "Grade pasted HTTP response headers (CSP, HSTS, Referrer-Policy, Permissions-Policy, COOP/COEP/CORP, cookies) and generate a recommended header set for nginx, Apache, Caddy and _headers files.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
+    ]
+  }
+  </script>
+
+  <link rel="preload" href="/fonts/big-shoulders-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/newsreader-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
+  <script src="/theme.js"></script>
+  <link rel="stylesheet" href="/site.css">
+</head>
+
+<body>
+<a class="skip" href="#headersInput">Skip to the tool</a>
+<header class="hero">
+  <div class="wrap">
+    <h1 class="display">
+      <span class="line"><span>Headers</span></span>
+      <span class="line"><span>grade &amp; harden</span></span>
+    </h1>
+    <p class="lead">Paste a site's <strong>HTTP response headers</strong>, see what is missing or weak, and copy a better set.</p>
+  </div>
+</header>
+
+<main>
+  <section class="block wrap" aria-labelledby="gradeTitle">
+    <h2 class="block-title" id="gradeTitle">Grade a response</h2>
+    <p class="block-note">A web page cannot read another site's response headers (the browser's CORS rules forbid it), so this tool works on <strong>pasted</strong> headers. Nothing is fetched and nothing is sent anywhere: the page has no network access at all (its CSP says <code>connect-src 'none'</code>).</p>
+
+    <div class="field input-group">
+      <label for="domainInput">
+        <span>Step 1: domain (optional)</span>
+        <i>fills in the command below</i>
+      </label>
+      <div class="field-row">
+        <input type="text" id="domainInput" placeholder="e.g. example.com" spellcheck="false" autocomplete="off" autocapitalize="off">
+      </div>
+      <div class="field-error" id="domainError" role="alert"></div>
+      <div class="cmd-block">
+        <div class="cmd"><code id="curlCmd">curl -sI https://example.com</code><button type="button" class="btn quiet" id="copyCurl">Copy</button></div>
+        <div class="cmd"><code id="curlCmd2">curl -sIL https://example.com</code><button type="button" class="btn quiet" id="copyCurl2">Copy</button></div>
+        <p class="hint">Run it in a terminal. The second form follows redirects; the last response is the one graded. Or open your browser dev tools, Network tab, pick the document request and copy its response headers.</p>
+      </div>
+      <p class="siblings"><span>Same domain, other tools:</span> <span id="siblingLinks"></span></p>
+    </div>
+
+    <div class="field">
+      <label for="headersInput">
+        <span>Step 2: paste the response headers</span>
+        <i>HTTP/1.1 or HTTP/2, status line optional</i>
+      </label>
+      <textarea id="headersInput" rows="12" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="HTTP/2 200&#10;content-type: text/html; charset=utf-8&#10;strict-transport-security: max-age=31536000&#10;..."></textarea>
+    </div>
+
+    <div class="opts">
+      <label class="check"><input type="checkbox" id="sensitive"> <span>Sensitive page (logged-in or personal data): require <code>Cache-Control: no-store</code></span></label>
+      <label class="sample-label" for="sampleSelect">Or load a sample <i>(invented headers for example.org, not a real site)</i></label>
+      <select id="sampleSelect"><option value="">Choose a sample...</option></select>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="btn" id="gradeBtn">Grade headers</button>
+      <button type="button" class="btn quiet" id="clearBtn">Clear</button>
+    </div>
+
+    <div class="result-area" id="resultContainer" aria-live="polite">
+      <div class="state empty">
+        <p>Paste headers and press "Grade headers" (or Ctrl+Enter).<br>Assumes the response was served over HTTPS. The score is a weighted heuristic, not an audit.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block wrap generator-section" aria-labelledby="genTitle">
+    <h2 class="block-title" id="genTitle">Recommended header set</h2>
+    <p class="block-note">Pick your options and copy the snippet for your server. Test in a staging environment first: a strict CSP or COEP can break pages that load third-party scripts, styles or embeds.</p>
+    <div class="gen-grid">
+      <div class="gen-row">
+        <label class="gen-label" for="genFormat">Format</label>
+        <select id="genFormat">
+          <option value="nginx">nginx</option>
+          <option value="apache">Apache (mod_headers)</option>
+          <option value="caddy">Caddy</option>
+          <option value="headers">_headers (Cloudflare Pages, Netlify)</option>
+        </select>
+      </div>
+      <div class="gen-row">
+        <label class="gen-label" for="genCsp">Content-Security-Policy</label>
+        <textarea id="genCsp" rows="4" spellcheck="false" autocomplete="off"></textarea>
+        <span class="hint">edit to fit your site; the checks below update as you type</span>
+      </div>
+      <ul class="findings plain" id="genCspCheck" aria-live="polite"></ul>
+      <div class="gen-row">
+        <label class="gen-label" for="genHstsAge">HSTS max-age</label>
+        <select id="genHstsAge">
+          <option value="31536000">31536000 (1 year)</option>
+          <option value="63072000" selected>63072000 (2 years)</option>
+          <option value="300">300 (5 minutes, for a first test)</option>
+        </select>
+      </div>
+      <div class="opts">
+        <label class="check"><input type="checkbox" id="genSub" checked> <span><code>includeSubDomains</code> (only if every subdomain serves HTTPS)</span></label>
+        <label class="check"><input type="checkbox" id="genPreload"> <span><code>preload</code> (a long-term commitment: read hstspreload.org first)</span></label>
+        <label class="check"><input type="checkbox" id="genCoep"> <span><code>Cross-Origin-Embedder-Policy: require-corp</code> (breaks cross-origin embeds without CORS/CORP)</span></label>
+      </div>
+      <div class="gen-row">
+        <label class="gen-label" for="genReferrer">Referrer-Policy</label>
+        <select id="genReferrer">
+          <option value="strict-origin-when-cross-origin" selected>strict-origin-when-cross-origin</option>
+          <option value="no-referrer">no-referrer</option>
+          <option value="same-origin">same-origin</option>
+          <option value="strict-origin">strict-origin</option>
+        </select>
+      </div>
+      <div class="gen-row">
+        <label class="gen-label" for="genXfo">X-Frame-Options (legacy fallback for frame-ancestors)</label>
+        <select id="genXfo">
+          <option value="DENY" selected>DENY</option>
+          <option value="SAMEORIGIN">SAMEORIGIN</option>
+          <option value="omit">omit</option>
+        </select>
+      </div>
+      <div class="gen-row">
+        <label class="gen-label" for="genCorp">Cross-Origin-Resource-Policy</label>
+        <select id="genCorp">
+          <option value="same-origin" selected>same-origin</option>
+          <option value="same-site">same-site</option>
+          <option value="cross-origin">cross-origin (public assets)</option>
+          <option value="">omit</option>
+        </select>
+      </div>
+      <div class="field-error" id="genError" role="alert"></div>
+      <div>
+        <div class="pub-head">
+          <h3>Snippet</h3>
+          <button type="button" class="btn quiet" id="genCopy">Copy</button>
+        </div>
+        <pre class="preview gen-output" id="genOutput" tabindex="0" aria-label="Generated configuration"></pre>
+      </div>
+      <p class="hint">Not generated because they depend on the page: <code>Cache-Control</code> (use <code>no-store</code> on logged-in pages) and <code>Set-Cookie</code> flags (set in your application: <code>__Host-name=...; Path=/; Secure; HttpOnly; SameSite=Lax</code>).</p>
+    </div>
+  </section>
+
+  <section class="block wrap" aria-labelledby="aboutTitle">
+    <h2 class="block-title" id="aboutTitle">How the grade works</h2>
+    <div class="about">
+      <p><strong>It is a heuristic.</strong> Each check is scored 0 to 1 and weighted (CSP 25, HSTS 15, clickjacking 7, cookies 10, X-Content-Type-Options, Referrer-Policy, Permissions-Policy and information leaks 5 each, COOP 4, COEP and CORP 2 each, Cache-Control 5 when the page is marked sensitive). Checks that do not apply, such as cookies when none are set, are left out of the total. The total maps to A+ (95 and up), A (85), B (70), C (55), D (40), E (25) and F. A missing CSP or HSTS caps the grade at B, and A+ needs a clean enforced CSP plus a one-year HSTS with includeSubDomains.</p>
+      <p><strong>What it cannot know.</strong> It sees one response only. It cannot tell whether HTTPS is enforced on every URL, whether a CSP breaks your site, whether your cookies are the ones that matter, or what other pages send. Headers also differ between pages, redirects and static assets. Reports with a different weighting, such as Mozilla Observatory or securityheaders.com, will give different letters.</p>
+      <p><strong>Privacy.</strong> Pasted text is parsed in your browser and discarded when you close the tab. There are no analytics, no cookies and no requests to any server (see the CSP of this page).</p>
+    </div>
+  </section>
+</main>
+
+<div class="foot">
+  <footer>
+    <span>runs <strong>offline in your browser</strong>, no network calls</span>
+    <span>grade headers, generate server snippets</span>
+    <a href="https://hbenali.ovh" target="_blank" rel="noopener noreferrer">hbenali.ovh</a>
+  </footer>
+</div>
+
+<script src="/app.js" defer></script>
+</body>
+</html>
