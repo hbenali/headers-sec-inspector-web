@@ -250,7 +250,7 @@
     var enforcedFA = null;
     if (!csp) {
       cspItem.score = 0;
-      cspItem.findings.push({ level: 'fail', text: cspRo ? 'Only Content-Security-Policy-Report-Only is set. Report-only policies log violations but block nothing, so they give no protection.' : 'Header not set. A CSP is the main defence against cross-site scripting (XSS) and data injection.' });
+      cspItem.findings.push({ level: 'fail', text: cspRo ? 'Only Content-Security-Policy-Report-Only is set. Report-only policies log violations but block nothing, so they give no protection.' : 'Header not set. A CSP is the main defense against cross-site scripting (XSS) and data injection.' });
       cspItem.fix = "Start with: Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'" + (cspRo ? '. Once the report-only policy is clean, send it as Content-Security-Policy.' : '. Run it as Report-Only first if you are unsure what it will break.');
       if (cspRo) {
         var ra = analyzeCsp(cspRo[0], { hasXfo: !!xfoVal });
@@ -826,7 +826,7 @@
     if (raw.trim()) {
       if (validDomain(d)) shown = d;
       else {
-        err.textContent = 'Enter a plain hostname such as example.com (ASCII; use the punycode form for internationalised names).';
+        err.textContent = 'Enter a plain hostname such as example.com (ASCII; use the punycode form for internationalized names).';
         err.classList.add('visible');
       }
     }
